@@ -14,7 +14,7 @@ namespace TroianServer
             Byte[] dir = new byte[1024];
             int size = stream.Read(dir, 0, dir.Length);
 
-            Byte[] aux = new byte[size + 1];
+            Byte[] aux = new byte[size];
             Array.Copy(dir, aux, size);
             String msg = Encoding.ASCII.GetString(aux);
 
